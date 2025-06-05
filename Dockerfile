@@ -1,0 +1,1 @@
+# Dockerfile для создания production образа приложения 
