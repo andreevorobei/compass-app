@@ -2,6 +2,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { Send, Bot, User } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 interface Message {
   role: 'user' | 'assistant'
@@ -14,28 +15,82 @@ interface ProfileUpdate {
   data: any
 }
 
+// Функции для извлечения данных из разговора
+const extractInterests = (messages: Message[]): string[] => {
+  const interests: string[] = []
+  messages.forEach(msg => {
+    if (msg.role === 'user') {
+      const content = msg.content.toLowerCase()
+      if (content.includes('нравится') || content.includes('увлечения') || 
+          content.includes('ходить') || content.includes('создавать') ||
+          content.includes('управлять') || content.includes('писать')) {
+        const items = msg.content.split(',').map(item => item.trim()).filter(item => item.length > 2)
+        interests.push(...items)
+      }
+    }
+  })
+  return Array.from(new Set(interests)) // убираем дубликаты
+}
+
+const extractSkills = (messages: Message[]): string[] => {
+  const skills: string[] = []
+  messages.forEach(msg => {
+    if (msg.role === 'user') {
+      const content = msg.content.toLowerCase()
+      if (content.includes('умею') || content.includes('навыки') ||
+          content.includes('читать') || content.includes('код') ||
+          content.includes('анализ') || content.includes('управление')) {
+        const items = msg.content.split(',').map(item => item.trim()).filter(item => item.length > 2)
+        skills.push(...items)
+      }
+    }
+  })
+  return Array.from(new Set(skills))
+}
+
+const extractPreferences = (messages: Message[]): any => {
+  const preferences: any = {}
+  messages.forEach(msg => {
+    if (msg.role === 'user') {
+      const content = msg.content.toLowerCase()
+      if (content.includes('команд')) preferences.teamwork = 'командная'
+      if (content.includes('самостоятельн')) preferences.teamwork = 'самостоятельная'
+      if (content.includes('люди')) preferences.workType = 'с людьми'
+      if (content.includes('данные')) preferences.workType = 'с данными'
+      if (content.includes('создавать')) preferences.workType = 'создание'
+      if (content.includes('стабильность')) preferences.priority = 'стабильность'
+      if (content.includes('вызов')) preferences.priority = 'новые вызовы'
+    }
+  })
+  return preferences
+}
+
 export default function ChatInterface() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: 'Привет! Как я могу помочь тебе в твоем карьерном развитии сегодня? Есть какие-то конкретные вопросы или цели, о которых ты хотел бы поговорить?',
+      content: 'Привет! Я Jess, твой карьерный коуч в Compass. Сейчас мы пройдем быстрый анализ, чтобы найти идеальные карьерные пути именно для тебя. Это займет всего 5-7 минут.\n\nНачнем с первого списка: напиши 5-10 вещей, которые тебе НРАВИТСЯ делать и приносят удовольствие. Это могут быть хобби, увлечения, типы задач - пиши первое, что приходит в голову, не обдумывай.',
       timestamp: new Date()
     }
   ])
   const [input, setInput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [profileUpdates, setProfileUpdates] = useState<ProfileUpdate[]>([])
+  const [profileData, setProfileData] = useState<any>(null)
+  const [currentStage, setCurrentStage] = useState<string>('data_collection')
+  const [isCompleted, setIsCompleted] = useState(false)
+  const router = useRouter()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
 
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
-  const handleSend = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
     if (!input.trim() || isLoading) return
 
     const userMessage: Message = {
@@ -44,14 +99,12 @@ export default function ChatInterface() {
       timestamp: new Date()
     }
 
-    console.log('📤 Sending message:', userMessage.content)
-    
     setMessages(prev => [...prev, userMessage])
     setInput('')
     setIsLoading(true)
 
     try {
-      console.log('🔄 Calling API...')
+      console.log('🚀 Sending message to API:', userMessage.content)
       
       const response = await fetch('/api/ai', {
         method: 'POST',
@@ -59,224 +112,226 @@ export default function ChatInterface() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [
-            ...messages,
-            { role: 'user', content: userMessage.content }
-          ]
+          messages: [...messages, userMessage].map(msg => ({
+            role: msg.role,
+            content: msg.content
+          }))
         }),
       })
 
-      console.log('📡 API Response status:', response.status)
-
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
-        console.error('❌ API Error:', errorData)
-        throw new Error(errorData.error || `HTTP ${response.status}`)
+        throw new Error(`API error: ${response.status}`)
       }
 
-      const data = await response.json()
-      console.log('📨 API Response data:', data)
-
-      // Проверяем что есть content в ответе
-      if (!data.content) {
-        console.error('❌ No content in response:', data)
-        throw new Error('AI не вернул ответ')
+      const text = await response.text()
+      console.log('📦 Full response text:', text)
+      
+      let content = ''
+      try {
+        // Пытаемся распарсить как JSON
+        const data = JSON.parse(text)
+        console.log('📋 Parsed JSON:', data)
+        content = data.content || data.message || text
+      } catch (e) {
+        // Если не JSON, используем как есть
+        console.log('📝 Using raw text')
+        content = text
       }
-
-      // Добавляем ответ AI
+      
       const assistantMessage: Message = {
         role: 'assistant',
-        content: data.content,
+        content: content || 'Привет! Я Jess, давайте начнем ваш карьерный анализ. Расскажите мне о ваших интересах!',
         timestamp: new Date()
       }
-
-      console.log('✅ Adding AI message:', assistantMessage.content.substring(0, 100) + '...')
-      setMessages(prev => [...prev, assistantMessage])
-
-      // Обрабатываем function call если есть
-      if (data.functionCall) {
-        console.log('🔄 Processing function call:', data.functionCall)
+      setMessages(prev => {
+        const newMessages = [...prev, assistantMessage]
         
-        // Отправляем событие для обновления профиля
-        const updateEvent = new CustomEvent('profileUpdate', {
-          detail: data.functionCall
-        })
-        window.dispatchEvent(updateEvent)
-        console.log('📡 Profile update event dispatched')
+        // Проверяем завершение анализа
+        if (content.includes('Переходи к результатам') || 
+            content.includes('карьерных путей') || 
+            content.includes('перенаправлю тебя на страницу') ||
+            content.includes('Перейти к результатам')) {
+          setIsCompleted(true)
+          
+          // Сохраняем данные разговора для страницы результатов
+          const conversationData = {
+            interests: extractInterests(newMessages),
+            skills: extractSkills(newMessages),
+            preferences: extractPreferences(newMessages),
+            messages: newMessages,
+            completedAt: new Date().toISOString()
+          }
+          localStorage.setItem('compass_profile_data', JSON.stringify(conversationData))
+        }
+        
+        return newMessages
+      })
 
-        // Добавляем в локальный стейт для отображения в правой панели
-        setProfileUpdates(prev => [...prev, {
-          timestamp: new Date().toLocaleTimeString('ru-RU', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
-          }),
-          data: data.functionCall
-        }])
-      }
+      console.log('✅ Message completed successfully')
 
     } catch (error) {
-      console.error('❌ Chat error:', error)
-      
-      const errorMessage: Message = {
+      console.error('❌ Chat Error:', error)
+      setMessages(prev => [...prev, {
         role: 'assistant',
-        content: `Извини, произошла ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}. Попробуй еще раз.`,
+        content: 'Извините, произошла ошибка. Попробуйте еще раз.',
         timestamp: new Date()
-      }
-      
-      setMessages(prev => [...prev, errorMessage])
+      }])
     } finally {
       setIsLoading(false)
-      console.log('✅ Request completed')
     }
   }
 
-  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault()
-      handleSend()
+  const getStageDescription = (stage: string) => {
+    switch(stage) {
+      case 'data_collection': return '📝 Сбор информации'
+      case 'summary_confirmation': return '📋 Подтверждение резюме'
+      case 'additions': return '✏️ Дополнения'
+      case 'ready_for_results': return '🎯 Готовность к результатам'
+      default: return '🚀 Карьерный анализ'
     }
   }
 
   return (
-    <div className="flex gap-6 h-screen p-4">
-      {/* Chat Section */}
-      <div className="flex-1 flex flex-col bg-white rounded-lg shadow">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-semibold text-gray-800">AI Career Coach</h2>
-          <p className="text-sm text-gray-600">Расскажи о своей карьере, и я помогу составить план развития</p>
-        </div>
-        
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className={`max-w-[80%] rounded-lg p-3 ${
-                message.role === 'user' 
-                  ? 'bg-blue-500 text-white' 
-                  : 'bg-gray-100 text-gray-900'
-              }`}>
-                <div className="flex items-start gap-2">
-                  {message.role === 'user' ? (
-                    <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  ) : (
-                    <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
-                  )}
-                  <div className="flex-1">
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {message.timestamp.toLocaleTimeString('ru-RU', { 
-                        hour: '2-digit', 
-                        minute: '2-digit' 
-                      })}
-                    </p>
-                  </div>
+    <div className="h-screen bg-gray-50 flex flex-col py-4">
+      <div className="max-w-6xl mx-auto px-4 flex-1 flex flex-col">
+        <div className="flex gap-6 flex-1">
+          {/* Chat Section */}
+          <div className="flex-1 bg-white rounded-lg shadow-lg flex flex-col">
+            <div className="p-6 border-b flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-800">AI Career Coach - Jess</h2>
+                  <p className="text-gray-600">Найдем идеальные карьерные пути именно для тебя</p>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-medium text-blue-600">{getStageDescription(currentStage)}</div>
+                  <div className="text-xs text-gray-500">Этап {currentStage === 'data_collection' ? '1' : currentStage === 'summary_confirmation' ? '2' : currentStage === 'additions' ? '3' : '4'} из 4</div>
                 </div>
               </div>
             </div>
-          ))}
-          
-          {isLoading && (
-            <div className="flex justify-start">
-              <div className="bg-gray-100 rounded-lg p-3">
-                <div className="flex items-center gap-2">
-                  <Bot className="h-4 w-4" />
-                  <div className="flex gap-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+            
+            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {messages.map((message, index) => (
+                <div
+                  key={index}
+                  className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-lg p-4 rounded-lg ${
+                      message.role === 'user'
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-gray-100 text-gray-900'
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap">
+                      {message.role === 'assistant' ? (
+                        <div 
+                          dangerouslySetInnerHTML={{
+                            __html: message.content
+                              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                              .replace(/(?<!\*)\\*([^*]+)\\*(?!\*)/g, '<em>$1</em>')
+                              .replace(/\n/g, '<br/>')
+                          }}
+                        />
+                      ) : (
+                        message.content
+                      )}
+                    </div>
                   </div>
                 </div>
-              </div>
+              ))}
+              
+              {isLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-gray-100 p-4 rounded-lg max-w-lg">
+                    <div className="flex items-center space-x-2">
+                      <div className="text-gray-500">Jess печатает...</div>
+                      <div className="flex space-x-1">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce"></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                        <div className="w-2 h-2 bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+              
+              {/* Кнопка перехода к результатам */}
+              {isCompleted && (
+                <div className="flex justify-center p-6">
+                  <button
+                    onClick={() => router.push('/results')}
+                    className="bg-green-500 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-green-600 transition-colors shadow-lg animate-pulse"
+                  >
+                    🚀 Перейти к рекомендованным карьерным путям
+                  </button>
+                </div>
+              )}
+              
+              <div ref={messagesEndRef} />
             </div>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </div>
-
-        {/* Input */}
-        <div className="p-4 border-t">
-          <div className="flex gap-2">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              placeholder="Расскажи о своей карьере..."
-              className="flex-1 min-h-[60px] p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isLoading}
-            />
-            <button 
-              onClick={handleSend} 
-              disabled={!input.trim() || isLoading}
-              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
-            >
-              <Send className="h-4 w-4" />
-            </button>
+            
+            <form onSubmit={handleSubmit} className="p-6 border-t flex-shrink-0">
+              <div className="flex gap-3">
+                <input
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Напиши свой ответ..."
+                  className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  disabled={isLoading}
+                />
+                <button
+                  type="submit"
+                  disabled={isLoading || !input.trim()}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
+                >
+                  <Send size={18} />
+                  Отправить
+                </button>
+              </div>
+            </form>
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Сообщения с ИИ, Запись №1 | Загрузка от OpenAI
-          </p>
-        </div>
-      </div>
 
-      {/* Profile Updates Panel */}
-      <div className="w-80 bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold text-gray-800 mb-4">🔄 Обновления профиля</h3>
-        {profileUpdates.length === 0 ? (
-          <p className="text-gray-500 text-sm">
-            Начни разговор с AI о своей карьере, и здесь будут появляться автоматические обновления твоего профиля!
-            <br/><br/>
-            <strong>Попробуй рассказать о:</strong>
-            <br/>• Твоей роли и опыте
-            <br/>• Навыках и технологиях  
-            <br/>• Карьерных целях
-          </p>
-        ) : (
-          <div className="space-y-3 max-h-96 overflow-y-auto">
-            {profileUpdates.map((update, index) => (
-              <div key={index} className="bg-green-50 border border-green-200 rounded p-3 text-sm">
-                <div className="font-medium text-green-800 mb-1">
-                  ⏰ {update.timestamp}
+          {/* Progress Panel */}
+          <div className="w-80 bg-white rounded-lg shadow-lg p-6 flex flex-col">
+            <div className="flex-shrink-0">
+              <h3 className="font-bold text-gray-800 mb-4 text-lg">📊 Прогресс анализа</h3>
+            </div>
+            
+            <div className="flex-1 flex flex-col">
+              <div className="space-y-3 mb-6">
+                <div className={`p-3 rounded-lg border-2 transition-all ${currentStage === 'data_collection' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="font-medium text-sm">1. Сбор данных</div>
+                  <div className="text-xs text-gray-600">Интересы и навыки</div>
                 </div>
-                <div className="space-y-2">
-                  {update.data.current_role && (
-                    <div><strong>Роль:</strong> {update.data.current_role}</div>
-                  )}
-                  {update.data.target_role && (
-                    <div><strong>Цель:</strong> {update.data.target_role}</div>
-                  )}
-                  {update.data.experience_years && (
-                    <div><strong>Опыт:</strong> {update.data.experience_years} лет</div>
-                  )}
-                  {update.data.skills && update.data.skills.length > 0 && (
-                    <div>
-                      <strong>Навыки:</strong>
-                      <ul className="mt-1 space-y-1">
-                        {update.data.skills.map((skill: any, skillIndex: number) => (
-                          <li key={skillIndex} className="text-xs bg-white p-1 rounded">
-                            {skill.name} ({skill.level}/100) - {skill.change}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-                  {update.data.goals && update.data.goals.length > 0 && (
-                    <div>
-                      <strong>Цели:</strong>
-                      <ul className="mt-1 space-y-1">
-                        {update.data.goals.map((goal: string, goalIndex: number) => (
-                          <li key={goalIndex} className="text-xs">• {goal}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                <div className={`p-3 rounded-lg border-2 transition-all ${currentStage === 'summary_confirmation' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="font-medium text-sm">2. Резюме профиля</div>
+                  <div className="text-xs text-gray-600">Подтверждение данных</div>
+                </div>
+                <div className={`p-3 rounded-lg border-2 transition-all ${currentStage === 'additions' ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="font-medium text-sm">3. Дополнения</div>
+                  <div className="text-xs text-gray-600">Уточнения и правки</div>
+                </div>
+                <div className={`p-3 rounded-lg border-2 transition-all ${currentStage === 'ready_for_results' ? 'border-green-500 bg-green-50' : 'border-gray-200 bg-gray-50'}`}>
+                  <div className="font-medium text-sm">4. Результаты</div>
+                  <div className="text-xs text-gray-600">Карьерные рекомендации</div>
                 </div>
               </div>
-            ))}
+
+              {profileData && (
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mt-auto">
+                  <div className="font-medium text-green-800 mb-2">📋 Собранные данные:</div>
+                  <div className="text-sm text-green-700 space-y-1">
+                    {profileData.interests && <div>✓ Интересы: {profileData.interests.length}</div>}
+                    {profileData.skills && <div>✓ Навыки: {profileData.skills.length}</div>}
+                    {profileData.preferences && <div>✓ Предпочтения: заполнены</div>}
+                    {profileData.summary && <div>✓ Резюме: создано</div>}
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
