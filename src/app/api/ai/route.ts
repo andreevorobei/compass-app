@@ -1,314 +1,149 @@
-// API route for AI interactions via OpenRouter
-// Function calling implementation for profile updates
-// Cost tracking and model selection logic
+import OpenAI from 'openai'
 
-import { NextRequest, NextResponse } from 'next/server'
-import { aiRouter } from '@/integrations/openrouter/router'
-import { ASSISTANT_CONFIG } from '@/integrations/assistant-ui/config'
-import { createServerClient } from '@/integrations/supabase/client'
-import { CacheManager } from '@/integrations/upstash/client'
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
-export async function POST(request: NextRequest) {
+const profileUpdateFunction = {
+  name: 'update_profile',
+  description: 'Updates user profile based on conversation analysis',
+  parameters: {
+    type: 'object',
+    properties: {
+      skills: {
+        type: 'array',
+        items: {
+          type: 'object',  
+          properties: {
+            name: { type: 'string', description: 'Skill name' },
+            level: { type: 'number', minimum: 0, maximum: 100, description: 'Skill level 0-100' },
+            change: { type: 'string', description: 'What changed about this skill' }
+          },
+          required: ['name', 'level', 'change']
+        }
+      },
+      current_role: { type: 'string', description: 'Current job title' },
+      target_role: { type: 'string', description: 'Desired job title' },
+      experience_years: { type: 'number', description: 'Years of experience' },
+      goals: {
+        type: 'array',
+        items: { type: 'string' },
+        description: 'Career goals mentioned'
+      }
+    }
+  }
+}
+
+export async function POST(req: Request) {
+  console.log('🚀 API /ai called')
+  
   try {
-    const { message, sessionId, userId, context } = await request.json()
-
-    // Validate required fields
-    if (!message || !userId) {
-      return NextResponse.json(
-        { error: 'Missing required fields: message, userId' },
-        { status: 400 }
-      )
-    }
-
-    // Get Supabase client for database operations
-    const supabase = createServerClient()
-
-    // Check cache for similar queries to save costs
-    const promptHash = hashPrompt(message, context)
-    const cachedResponse = await CacheManager.getAIResponse(promptHash)
+    const { messages } = await req.json()
     
-    if (cachedResponse) {
-      return NextResponse.json({
-        content: cachedResponse.content,
-        model: cachedResponse.model,
-        cached: true,
-        cost: 0
-      })
+    console.log('📨 Received messages:', messages?.length || 0)
+    console.log('📨 Last message:', messages?.[messages.length - 1])
+    
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      console.log('❌ Invalid messages format')
+      return Response.json({ 
+        error: 'Invalid messages format' 
+      }, { status: 400 })
     }
 
-    // Route AI request through OpenRouter
-    const aiResponse = await aiRouter.route(message, {
-      context: context?.type || 'career-advice',
-      maxCost: 0.01 // Maximum $0.01 per request
-    })
-
-    // Process function calls if any
-    let functionResults = null
-    if (aiResponse.response.function_calls) {
-      functionResults = await processFunctionCalls(
-        aiResponse.response.function_calls,
-        userId,
-        supabase
-      )
+    // Проверим есть ли OpenAI API ключ
+    const hasApiKey = !!process.env.OPENAI_API_KEY
+    console.log('🔑 OpenAI API Key present:', hasApiKey)
+    
+    if (!hasApiKey) {
+      console.log('❌ No OpenAI API key found')
+      return Response.json({
+        error: 'OpenAI API key not configured'
+      }, { status: 500 })
     }
 
-    // Save conversation to database
-    await saveConversation({
-      sessionId,
-      userId,
-      userMessage: message,
-      aiResponse: aiResponse.response.content,
-      model: aiResponse.model,
-      cost: aiResponse.cost,
-      functionCalls: functionResults
-    }, supabase)
+    console.log('🤖 Calling OpenAI with function calling...')
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [
+        {
+          role: 'system',
+          content: `Ты AI карьерный коуч по имени Compass. 
+      
+Твоя задача:
+- Помогать пользователю в карьерном развитии
+- Анализировать разговор и выявлять информацию о навыках, опыте, целях
+- Когда пользователь упоминает конкретные навыки, роли, цели или опыт - вызывай функцию update_profile
+- ВСЕГДА отвечай дружелюбно, профессионально, мотивирующе на русском языке
+- Задавай уточняющие вопросы о карьерных планах
 
-    // Cache the response for future similar queries
-    await CacheManager.cacheAIResponse(promptHash, {
-      content: aiResponse.response.content,
-      model: aiResponse.model,
-      cost: aiResponse.cost
+ВАЖНО: Даже если ты вызываешь функцию update_profile, ОБЯЗАТЕЛЬНО давай текстовый ответ пользователю!
+
+Примеры:
+- "Я Frontend разработчик" → вызови update_profile И ответь: "Отлично! Я записал что ты Frontend разработчик. Расскажи больше о своем опыте!"
+- "Хочу стать PM" → вызови update_profile И ответь: "Понял! Product Manager - отличная цель. Что привлекает тебя в этой роли?"
+- "Работаю 3 года" → вызови update_profile И ответь: "3 года опыта - хорошая база! В какой области работаешь?"
+
+Всегда комбинируй function calling с полезным текстовым ответом!`
+        },
+        ...messages
+      ],
+      functions: [profileUpdateFunction],
+      function_call: 'auto',
+      temperature: 0.7,
+      max_tokens: 1000
     })
 
-    // Track AI usage for analytics
-    await trackAIUsage({
-      userId,
-      sessionId,
-      model: aiResponse.model,
-      tokensUsed: aiResponse.response.tokens_used || 0,
-      cost: aiResponse.cost,
-      requestType: functionResults ? 'function_call' : 'chat'
-    }, supabase)
+    console.log('✅ OpenAI response received')
 
-    return NextResponse.json({
-      content: aiResponse.response.content,
-      model: aiResponse.model,
-      cost: aiResponse.cost,
-      functionResults,
-      cached: false
+    const message = response.choices[0]?.message
+    
+    if (!message) {
+      throw new Error('No response from OpenAI')
+    }
+
+    let functionCallResult = null
+    if (message.function_call) {
+      try {
+        functionCallResult = JSON.parse(message.function_call.arguments)
+        console.log('🔄 Function Call Result:', functionCallResult)
+      } catch (error) {
+        console.error('❌ Error parsing function call:', error)
+      }
+    }
+
+    // Убеждаемся что всегда есть контент для ответа
+    let content = message.content || ''
+    
+    // Если нет контента, но есть function call, создаем базовый ответ
+    if (!content && functionCallResult) {
+      content = 'Отлично! Я обновил информацию о твоем профиле. Расскажи еще что-нибудь о своей карьере!'
+    }
+    
+    // Если вообще нет ответа, создаем дефолтный
+    if (!content) {
+      content = 'Извини, что-то пошло не так. Можешь повторить свой вопрос?'
+    }
+
+    console.log('📤 Sending response with content:', content.substring(0, 100) + '...')
+
+    return Response.json({
+      content: content,
+      functionCall: functionCallResult,
+      model: 'gpt-4o-mini'
     })
 
   } catch (error) {
-    console.error('AI API Error:', error)
+    console.error('❌ AI API Error:', error)
     
-    return NextResponse.json(
-      { 
-        error: 'Failed to process AI request',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    )
-  }
-}
-
-// Helper function to hash prompts for caching
-function hashPrompt(message: string, context?: any): string {
-  const combined = JSON.stringify({ message, context })
-  let hash = 0
-  for (let i = 0; i < combined.length; i++) {
-    const char = combined.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash
-  }
-  return Math.abs(hash).toString(36)
-}
-
-// Process function calls from AI
-async function processFunctionCalls(
-  functionCalls: any[],
-  userId: string,
-  supabase: any
-) {
-  const results = []
-
-  for (const call of functionCalls) {
-    try {
-      let result = null
-
-      switch (call.name) {
-        case 'updateUserProfile':
-          result = await updateUserProfile(call.arguments, userId, supabase)
-          break
-        
-        case 'setCareerGoals':
-          result = await setCareerGoals(call.arguments, userId, supabase)
-          break
-        
-        case 'trackProgress':
-          result = await trackProgress(call.arguments, userId, supabase)
-          break
-        
-        default:
-          result = { error: `Unknown function: ${call.name}` }
-      }
-
-      results.push({
-        function: call.name,
-        arguments: call.arguments,
-        result
-      })
-
-    } catch (error) {
-      results.push({
-        function: call.name,
-        arguments: call.arguments,
-        error: error instanceof Error ? error.message : 'Function execution failed'
-      })
+    if (error instanceof Error) {
+      console.error('Error message:', error.message)
+      console.error('Error stack:', error.stack)
     }
-  }
-
-  return results
-}
-
-// Function implementations
-async function updateUserProfile(args: any, userId: string, supabase: any) {
-  const { skills, experience, interests } = args
-
-  // Update skills if provided
-  if (skills && Array.isArray(skills)) {
-    for (const skillName of skills) {
-      await supabase
-        .from('skills')
-        .upsert({
-          user_id: userId,
-          name: skillName,
-          category: 'AI-Identified',
-          proficiency_level: 1, // Default level
-          is_core_skill: false
-        })
-    }
-  }
-
-  // Update profile fields
-  const updateData: any = {}
-  if (experience) updateData.experience_years = experience
-  if (interests) updateData.interests = interests
-
-  if (Object.keys(updateData).length > 0) {
-    await supabase
-      .from('profiles')
-      .update(updateData)
-      .eq('user_id', userId)
-  }
-
-  return { 
-    message: 'Profile updated successfully',
-    updated: { skills, experience, interests }
+    
+    return Response.json({ 
+      error: 'AI service temporarily unavailable. Please try again.',
+      details: process.env.NODE_ENV === 'development' ? (error instanceof Error ? error.message : String(error)) : undefined
+    }, { status: 500 })
   }
 }
-
-async function setCareerGoals(args: any, userId: string, supabase: any) {
-  const { shortTerm, longTerm, priority } = args
-
-  const goals = []
-  
-  // Add short-term goals
-  if (shortTerm && Array.isArray(shortTerm)) {
-    for (const goal of shortTerm) {
-      goals.push({
-        user_id: userId,
-        title: goal,
-        category: 'short_term',
-        priority: priority || 'medium',
-        status: 'not_started',
-        progress_percentage: 0
-      })
-    }
-  }
-
-  // Add long-term goals
-  if (longTerm && Array.isArray(longTerm)) {
-    for (const goal of longTerm) {
-      goals.push({
-        user_id: userId,
-        title: goal,
-        category: 'long_term',
-        priority: priority || 'medium',
-        status: 'not_started',
-        progress_percentage: 0
-      })
-    }
-  }
-
-  if (goals.length > 0) {
-    await supabase.from('goals').insert(goals)
-  }
-
-  return {
-    message: 'Goals created successfully',
-    goalsCreated: goals.length
-  }
-}
-
-async function trackProgress(args: any, userId: string, supabase: any) {
-  const { skillName, progressPercentage, notes } = args
-
-  // Find the skill
-  const { data: skill } = await supabase
-    .from('skills')
-    .select('*')
-    .eq('user_id', userId)
-    .eq('name', skillName)
-    .single()
-
-  if (skill) {
-    // Update skill progress
-    await supabase
-      .from('skills')
-      .update({ proficiency_level: Math.ceil(progressPercentage / 10) })
-      .eq('id', skill.id)
-
-    // Record progress entry
-    await supabase
-      .from('progress_tracking')
-      .insert({
-        user_id: userId,
-        skill_id: skill.id,
-        metric_name: 'proficiency_level',
-        metric_value: progressPercentage,
-        notes
-      })
-  }
-
-  return {
-    message: 'Progress tracked successfully',
-    skill: skillName,
-    progress: progressPercentage
-  }
-}
-
-// Save conversation to database
-async function saveConversation(data: any, supabase: any) {
-  // Save to chat_messages table
-  await supabase.from('chat_messages').insert([
-    {
-      session_id: data.sessionId,
-      user_id: data.userId,
-      role: 'user',
-      content: data.userMessage
-    },
-    {
-      session_id: data.sessionId,
-      user_id: data.userId,
-      role: 'assistant',
-      content: data.aiResponse,
-      metadata: {
-        model: data.model,
-        cost: data.cost,
-        function_calls: data.functionCalls
-      }
-    }
-  ])
-}
-
-// Track AI usage for analytics
-async function trackAIUsage(data: any, supabase: any) {
-  await supabase.from('ai_usage').insert({
-    user_id: data.userId,
-    session_id: data.sessionId,
-    model_name: data.model,
-    tokens_used: data.tokensUsed,
-    cost_usd: data.cost,
-    request_type: data.requestType
-  })
-} 

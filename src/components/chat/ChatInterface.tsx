@@ -1,228 +1,281 @@
-// Main chat interface using Assistant UI components
-// Integration with OpenRouter for AI responses
-// Function calling for automatic profile updates
-
 'use client'
 
-import React from 'react'
-import { 
-  Thread,
-  Composer,
-  UserMessage,
-  AssistantMessage,
-  BranchPicker,
-  ActionBar,
-  MessageIf,
-  ThreadWelcome
-} from '@assistant-ui/react'
-import { AssistantProvider } from '@/integrations/assistant-ui/provider'
-import { ASSISTANT_CONFIG } from '@/integrations/assistant-ui/config'
-import { cn } from '@/lib/utils'
-import { Loader2, Send, Mic, Paperclip } from 'lucide-react'
+import React, { useState, useRef, useEffect } from 'react'
+import { Send, Bot, User } from 'lucide-react'
 
-interface ChatInterfaceProps {
-  className?: string
-  sessionId?: string
-  initialMessage?: string
-}
-
-export function ChatInterface({ 
-  className, 
-  sessionId,
-  initialMessage 
-}: ChatInterfaceProps) {
-  return (
-    <AssistantProvider apiUrl="/api/ai">
-      <div className={cn('chat-container', className)}>
-        {/* Thread displays the conversation */}
-        <Thread className="flex-1 overflow-hidden">
-          {/* Welcome message for new users */}
-          <ThreadWelcome className="p-6 text-center">
-            <div className="max-w-md mx-auto">
-              <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                Welcome to Compass AI Career Coach
-              </h2>
-              <p className="text-gray-600 mb-6">
-                {ASSISTANT_CONFIG.messages.welcome.text}
-              </p>
-              
-              {/* Suggested prompts */}
-              <div className="grid grid-cols-1 gap-2">
-                {ASSISTANT_CONFIG.messages.suggestions.map((suggestion, index) => (
-                  <button
-                    key={index}
-                    className="p-3 text-left border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-                    onClick={() => {
-                      // This would trigger sending the suggestion as a message
-                      // Implementation depends on Assistant UI's API
-                    }}
-                  >
-                    <span className="text-sm text-gray-700">{suggestion}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </ThreadWelcome>
-
-          {/* Message list */}
-          <div className="flex-1 overflow-y-auto px-6 py-4">
-            {/* User messages */}
-            <UserMessage className="mb-4">
-              <MessageIf hasContent>
-                <div className="chat-message-user">
-                  <UserMessage.Content className="text-white" />
-                </div>
-              </MessageIf>
-            </UserMessage>
-
-            {/* AI Assistant messages */}
-            <AssistantMessage className="mb-4">
-              <MessageIf hasContent>
-                <div className="chat-message-ai">
-                  <AssistantMessage.Content className="text-gray-900" />
-                  
-                  {/* Action bar for message actions */}
-                  <ActionBar className="mt-2 flex items-center gap-2">
-                    <ActionBar.Copy className="text-xs text-gray-500 hover:text-gray-700" />
-                    <ActionBar.Reload className="text-xs text-gray-500 hover:text-gray-700" />
-                  </ActionBar>
-                </div>
-              </MessageIf>
-              
-              {/* Loading state for streaming responses */}
-              <MessageIf.Loading>
-                <div className="chat-message-ai">
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    <span className="text-sm text-gray-500">AI is thinking...</span>
-                  </div>
-                </div>
-              </MessageIf.Loading>
-            </AssistantMessage>
-
-            {/* Branch picker for message variations */}
-            <BranchPicker className="my-2">
-              <BranchPicker.Previous className="text-xs text-blue-600 hover:text-blue-800" />
-              <BranchPicker.Next className="text-xs text-blue-600 hover:text-blue-800" />
-            </BranchPicker>
-          </div>
-        </Thread>
-
-        {/* Message composer */}
-        <div className="border-t bg-white p-4">
-          <Composer className="relative">
-            <div className="flex items-end gap-3">
-              {/* Attachment button */}
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Paperclip className="w-5 h-5" />
-              </button>
-
-              {/* Text input */}
-              <div className="flex-1 relative">
-                <Composer.Input
-                  className={cn(
-                    "w-full resize-none border border-gray-300 rounded-lg px-4 py-3 pr-12",
-                    "focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent",
-                    "placeholder:text-gray-400"
-                  )}
-                  placeholder="Ask about your career goals, skills, or get advice..."
-                  autoFocus
-                />
-                
-                {/* Send button */}
-                <Composer.Send className="absolute right-2 top-1/2 -translate-y-1/2">
-                  <button className="p-2 text-blue-600 hover:text-blue-800 transition-colors">
-                    <Send className="w-5 h-5" />
-                  </button>
-                </Composer.Send>
-              </div>
-
-              {/* Voice input button */}
-              <button className="p-2 text-gray-400 hover:text-gray-600 transition-colors">
-                <Mic className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Character count and status */}
-            <div className="flex justify-between items-center mt-2 text-xs text-gray-500">
-              <span>
-                Powered by OpenRouter AI • Cost optimized routing
-              </span>
-              <Composer.If editing>
-                <span>Editing message...</span>
-              </Composer.If>
-            </div>
-          </Composer>
-        </div>
-      </div>
-    </AssistantProvider>
-  )
-}
-
-// Typing indicator component
-export function TypingIndicator() {
-  return (
-    <div className="typing-indicator">
-      <div className="typing-dot" style={{ animationDelay: '0ms' }} />
-      <div className="typing-dot" style={{ animationDelay: '150ms' }} />
-      <div className="typing-dot" style={{ animationDelay: '300ms' }} />
-    </div>
-  )
-}
-
-// Message bubble component for custom styling
-interface MessageBubbleProps {
+interface Message {
   role: 'user' | 'assistant'
   content: string
-  timestamp?: string
-  isLoading?: boolean
-  functionCalls?: any[]
+  timestamp: Date
 }
 
-export function MessageBubble({ 
-  role, 
-  content, 
-  timestamp, 
-  isLoading,
-  functionCalls 
-}: MessageBubbleProps) {
+interface ProfileUpdate {
+  timestamp: string
+  data: any
+}
+
+export default function ChatInterface() {
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      role: 'assistant',
+      content: 'Привет! Как я могу помочь тебе в твоем карьерном развитии сегодня? Есть какие-то конкретные вопросы или цели, о которых ты хотел бы поговорить?',
+      timestamp: new Date()
+    }
+  ])
+  const [input, setInput] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [profileUpdates, setProfileUpdates] = useState<ProfileUpdate[]>([])
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  const handleSend = async () => {
+    if (!input.trim() || isLoading) return
+
+    const userMessage: Message = {
+      role: 'user',
+      content: input.trim(),
+      timestamp: new Date()
+    }
+
+    console.log('📤 Sending message:', userMessage.content)
+    
+    setMessages(prev => [...prev, userMessage])
+    setInput('')
+    setIsLoading(true)
+
+    try {
+      console.log('🔄 Calling API...')
+      
+      const response = await fetch('/api/ai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          messages: [
+            ...messages,
+            { role: 'user', content: userMessage.content }
+          ]
+        }),
+      })
+
+      console.log('📡 API Response status:', response.status)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: 'Unknown error' }))
+        console.error('❌ API Error:', errorData)
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
+      const data = await response.json()
+      console.log('📨 API Response data:', data)
+
+      // Проверяем что есть content в ответе
+      if (!data.content) {
+        console.error('❌ No content in response:', data)
+        throw new Error('AI не вернул ответ')
+      }
+
+      // Добавляем ответ AI
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: data.content,
+        timestamp: new Date()
+      }
+
+      console.log('✅ Adding AI message:', assistantMessage.content.substring(0, 100) + '...')
+      setMessages(prev => [...prev, assistantMessage])
+
+      // Обрабатываем function call если есть
+      if (data.functionCall) {
+        console.log('🔄 Processing function call:', data.functionCall)
+        
+        // Отправляем событие для обновления профиля
+        const updateEvent = new CustomEvent('profileUpdate', {
+          detail: data.functionCall
+        })
+        window.dispatchEvent(updateEvent)
+        console.log('📡 Profile update event dispatched')
+
+        // Добавляем в локальный стейт для отображения в правой панели
+        setProfileUpdates(prev => [...prev, {
+          timestamp: new Date().toLocaleTimeString('ru-RU', { 
+            hour: '2-digit', 
+            minute: '2-digit' 
+          }),
+          data: data.functionCall
+        }])
+      }
+
+    } catch (error) {
+      console.error('❌ Chat error:', error)
+      
+      const errorMessage: Message = {
+        role: 'assistant',
+        content: `Извини, произошла ошибка: ${error instanceof Error ? error.message : 'Неизвестная ошибка'}. Попробуй еще раз.`,
+        timestamp: new Date()
+      }
+      
+      setMessages(prev => [...prev, errorMessage])
+    } finally {
+      setIsLoading(false)
+      console.log('✅ Request completed')
+    }
+  }
+
+  const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
   return (
-    <div className={cn(
-      'flex w-full mb-4',
-      role === 'user' ? 'justify-end' : 'justify-start'
-    )}>
-      <div className={cn(
-        'max-w-xs lg:max-w-md px-4 py-2 rounded-lg',
-        role === 'user' 
-          ? 'bg-blue-500 text-white' 
-          : 'bg-white border border-gray-200 text-gray-900'
-      )}>
-        {isLoading ? (
-          <TypingIndicator />
-        ) : (
-          <>
-            <p className="text-sm">{content}</p>
-            
-            {/* Function call results */}
-            {functionCalls && functionCalls.length > 0 && (
-              <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-                <span className="font-medium">Actions performed:</span>
-                <ul className="mt-1 space-y-1">
-                  {functionCalls.map((call, index) => (
-                    <li key={index} className="text-gray-600">
-                      • {call.function}: {call.result?.message || 'Completed'}
-                    </li>
-                  ))}
-                </ul>
+    <div className="flex gap-6 h-screen p-4">
+      {/* Chat Section */}
+      <div className="flex-1 flex flex-col bg-white rounded-lg shadow">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-semibold text-gray-800">AI Career Coach</h2>
+          <p className="text-sm text-gray-600">Расскажи о своей карьере, и я помогу составить план развития</p>
+        </div>
+        
+        {/* Messages */}
+        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          {messages.map((message, index) => (
+            <div
+              key={index}
+              className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[80%] rounded-lg p-3 ${
+                message.role === 'user' 
+                  ? 'bg-blue-500 text-white' 
+                  : 'bg-gray-100 text-gray-900'
+              }`}>
+                <div className="flex items-start gap-2">
+                  {message.role === 'user' ? (
+                    <User className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  ) : (
+                    <Bot className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                  )}
+                  <div className="flex-1">
+                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    <p className="text-xs opacity-70 mt-1">
+                      {message.timestamp.toLocaleTimeString('ru-RU', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                      })}
+                    </p>
+                  </div>
+                </div>
               </div>
-            )}
-            
-            {timestamp && (
-              <p className="text-xs mt-1 opacity-70">
-                {new Date(timestamp).toLocaleTimeString()}
-              </p>
-            )}
-          </>
+            </div>
+          ))}
+          
+          {isLoading && (
+            <div className="flex justify-start">
+              <div className="bg-gray-100 rounded-lg p-3">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-4 w-4" />
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input */}
+        <div className="p-4 border-t">
+          <div className="flex gap-2">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyPress={handleKeyPress}
+              placeholder="Расскажи о своей карьере..."
+              className="flex-1 min-h-[60px] p-3 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              disabled={isLoading}
+            />
+            <button 
+              onClick={handleSend} 
+              disabled={!input.trim() || isLoading}
+              className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center"
+            >
+              <Send className="h-4 w-4" />
+            </button>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Сообщения с ИИ, Запись №1 | Загрузка от OpenAI
+          </p>
+        </div>
+      </div>
+
+      {/* Profile Updates Panel */}
+      <div className="w-80 bg-white rounded-lg shadow p-4">
+        <h3 className="font-semibold text-gray-800 mb-4">🔄 Обновления профиля</h3>
+        {profileUpdates.length === 0 ? (
+          <p className="text-gray-500 text-sm">
+            Начни разговор с AI о своей карьере, и здесь будут появляться автоматические обновления твоего профиля!
+            <br/><br/>
+            <strong>Попробуй рассказать о:</strong>
+            <br/>• Твоей роли и опыте
+            <br/>• Навыках и технологиях  
+            <br/>• Карьерных целях
+          </p>
+        ) : (
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {profileUpdates.map((update, index) => (
+              <div key={index} className="bg-green-50 border border-green-200 rounded p-3 text-sm">
+                <div className="font-medium text-green-800 mb-1">
+                  ⏰ {update.timestamp}
+                </div>
+                <div className="space-y-2">
+                  {update.data.current_role && (
+                    <div><strong>Роль:</strong> {update.data.current_role}</div>
+                  )}
+                  {update.data.target_role && (
+                    <div><strong>Цель:</strong> {update.data.target_role}</div>
+                  )}
+                  {update.data.experience_years && (
+                    <div><strong>Опыт:</strong> {update.data.experience_years} лет</div>
+                  )}
+                  {update.data.skills && update.data.skills.length > 0 && (
+                    <div>
+                      <strong>Навыки:</strong>
+                      <ul className="mt-1 space-y-1">
+                        {update.data.skills.map((skill: any, skillIndex: number) => (
+                          <li key={skillIndex} className="text-xs bg-white p-1 rounded">
+                            {skill.name} ({skill.level}/100) - {skill.change}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {update.data.goals && update.data.goals.length > 0 && (
+                    <div>
+                      <strong>Цели:</strong>
+                      <ul className="mt-1 space-y-1">
+                        {update.data.goals.map((goal: string, goalIndex: number) => (
+                          <li key={goalIndex} className="text-xs">• {goal}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
     </div>
