@@ -271,7 +271,10 @@ export default function ResultsPage() {
                 </div>
               </div>
               
-              <button className="w-full mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors">
+              <button 
+                onClick={() => router.push(`/career/${encodeURIComponent(career.title.toLowerCase().replace(/\s+/g, '-'))}`)}
+                className="w-full mt-4 bg-blue-500 text-white py-2 px-4 rounded-lg hover:bg-blue-600 transition-colors"
+              >
                 Узнать подробнее
               </button>
             </div>
