@@ -1,0 +1,56 @@
+{
+  "folders": [
+    {
+      "name": "🚀 Root",
+      "path": "."
+    },
+    {
+      "name": "🌐 Web App", 
+      "path": "./apps/web"
+    },
+    {
+      "name": "📦 Shared",
+      "path": "./packages/shared"
+    },
+    {
+      "name": "🗄️ Database",
+      "path": "./packages/database"
+    },
+    {
+      "name": "🤖 AI Router",
+      "path": "./packages/ai-router"
+    }
+  ],
+  "settings": {
+    "typescript.preferences.includePackageJsonAutoImports": "on",
+    "typescript.preferences.includeWorkspaceSymbolsInAutoImports": true,
+    "typescript.enablePromptUseWorkspaceTsdk": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": "explicit"
+    },
+    "editor.formatOnSave": true,
+    "editor.defaultFormatter": "esbenp.prettier-vscode",
+    "tailwindCSS.experimental.configFile": "apps/web/tailwind.config.js",
+    "search.exclude": {
+      "**/node_modules": true,
+      "**/dist": true,
+      "**/.next": true
+    },
+    "files.exclude": {
+      "**/node_modules": true,
+      "**/.next": true
+    }
+  },
+  "extensions": {
+    "recommendations": [
+      "esbenp.prettier-vscode",
+      "bradlc.vscode-tailwindcss",
+      "ms-vscode.vscode-typescript-next",
+      "ms-playwright.playwright",
+      "ms-vscode.vscode-json",
+      "christian-kohler.path-intellisense",
+      "formulahendry.auto-rename-tag",
+      "ms-vscode.vscode-eslint"
+    ]
+  }
+} 

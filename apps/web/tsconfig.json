@@ -1,1 +1,23 @@
+<<<<<<< HEAD
 // TypeScript конфигурация для Next.js веб-приложения 
+=======
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@compass/shared/*": ["../../packages/shared/src/*"],
+      "@compass/database/*": ["../../packages/database/src/*"],
+      "@compass/ai-router/*": ["../../packages/ai-router/src/*"]
+    }
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+} 
+>>>>>>> cf02646 (feat(auth): add login and register pages, update project structure)

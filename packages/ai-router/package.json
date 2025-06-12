@@ -1,1 +1,18 @@
-// Package.json для AI роутера 
+{
+  "name": "@compass/ai-router",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@ai-sdk/openai": "^1.3.22",
+    "ai": "^4.3.16",
+    "openai": "^5.1.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+} 

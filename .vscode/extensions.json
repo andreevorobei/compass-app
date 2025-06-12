@@ -1,1 +1,13 @@
-// Рекомендуемые расширения для VS Code 
+{
+  "recommendations": [
+    "esbenp.prettier-vscode",
+    "bradlc.vscode-tailwindcss",
+    "ms-vscode.vscode-typescript-next",
+    "ms-playwright.playwright",
+    "ms-vscode.vscode-json",
+    "christian-kohler.path-intellisense",
+    "formulahendry.auto-rename-tag",
+    "ms-vscode.vscode-eslint",
+    "yoavbls.pretty-ts-errors"
+  ]
+} 

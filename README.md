@@ -1,6 +1,165 @@
-# 🧭 Compass - AI-Powered Career Coaching Platform
+# Compass App
 
-A Next.js 14 application that provides personalized career coaching through AI-powered conversations, automatic profile updates via function calling, and real-time progress visualization.
+Современное веб-приложение для карьерного развития и планирования целей с интеграцией AI.
+
+## 🏗️ Архитектура проекта
+
+Это монорепозиторий, организованный с помощью npm workspaces:
+
+```
+compass-app/
+├── apps/
+│   └── web/                          # Next.js веб-приложение
+│       ├── src/
+│       │   ├── app/                  # App Router (Next.js 14)
+│       │   │   ├── (auth)/          # Группа маршрутов аутентификации
+│       │   │   ├── (dashboard)/     # Группа маршрутов дашборда
+│       │   │   ├── api/             # API маршруты
+│       │   │   └── ...
+│       │   ├── components/          # React компоненты
+│       │   ├── lib/                 # Утилиты и конфигурация
+│       │   ├── hooks/               # React хуки
+│       │   ├── store/               # State management (Zustand)
+│       │   └── styles/              # Стили
+│       ├── public/                  # Статические файлы
+│       └── package.json
+├── packages/
+│   ├── shared/                      # Общие типы и утилиты
+│   ├── database/                    # Database схемы и миграции
+│   └── ai-router/                   # AI интеграции и роутинг
+├── docs/                           # Документация
+├── scripts/                        # Утилитарные скрипты
+└── package.json                    # Корневая конфигурация workspace
+```
+
+## 🚀 Быстрый старт
+
+### Предварительные требования
+
+- Node.js 18+ 
+- npm 9+
+
+### Установка
+
+```bash
+# Клонирование репозитория
+git clone https://github.com/your-username/compass-app.git
+cd compass-app
+
+# Установка всех зависимостей для всех пакетов
+npm install
+
+# Настройка переменных окружения
+cp apps/web/.env.example apps/web/.env.local
+# Отредактируйте apps/web/.env.local с вашими настройками
+```
+
+### Запуск в режиме разработки
+
+```bash
+# Запуск веб-приложения
+npm run dev
+
+# Или из корневой папки
+cd apps/web && npm run dev
+```
+
+Приложение будет доступно по адресу [http://localhost:3000](http://localhost:3000)
+
+## 🛠️ Доступные команды
+
+```bash
+# Разработка
+npm run dev          # Запуск dev сервера веб-приложения
+npm run build        # Сборка для продакшена
+npm run start        # Запуск продакшен сервера
+npm run lint         # Линтинг кода
+npm run type-check   # Проверка типов TypeScript
+
+# Работа с workspace
+npm install --workspace=apps/web [package]  # Добавить зависимость в веб-приложение
+npm run [script] --workspace=apps/web       # Запустить скрипт в конкретном workspace
+```
+
+## 🏗️ Технологический стек
+
+### Frontend (apps/web)
+- **Framework:** Next.js 14 (App Router)
+- **Styling:** Tailwind CSS + Tremor React
+- **State Management:** Zustand
+- **UI Components:** Lucide React icons
+- **Forms:** React Hook Form + Zod validation
+
+### Backend & Database
+- **Database:** Supabase (PostgreSQL)
+- **Authentication:** Supabase Auth
+- **ORM:** Supabase Client
+
+### AI & Analytics
+- **AI SDK:** Vercel AI SDK
+- **LLM Provider:** OpenAI
+- **Caching:** Upstash Redis
+
+### Development
+- **Language:** TypeScript
+- **Linting:** ESLint + Prettier
+- **Testing:** Playwright (E2E)
+
+## 📁 Структура проекта
+
+### apps/web - Основное веб-приложение
+
+- **`/src/app/`** - Next.js App Router
+  - **`(auth)/`** - Страницы аутентификации (login, register)
+  - **`(dashboard)/`** - Основные страницы приложения
+  - **`api/`** - API endpoints
+- **`/src/components/`** - Переиспользуемые React компоненты
+- **`/src/lib/`** - Утилиты, конфигурация, типы
+- **`/src/hooks/`** - Кастомные React хуки  
+- **`/src/store/`** - Zustand store конфигурация
+
+### packages/ - Монорепозиторий пакеты
+
+- **`shared/`** - Общие типы, константы, утилиты
+- **`database/`** - Database схемы, миграции, seeds
+- **`ai-router/`** - AI интеграции и роутинг логика
+
+## 🔒 Переменные окружения
+
+Создайте файл `apps/web/.env.local`:
+
+```env
+# Supabase
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+
+# OpenAI
+OPENAI_API_KEY=your_openai_api_key
+
+# Upstash Redis (опционально)
+UPSTASH_REDIS_REST_URL=your_redis_url
+UPSTASH_REDIS_REST_TOKEN=your_redis_token
+```
+
+## 🤝 Контрибьюция
+
+1. Форкните репозиторий
+2. Создайте feature ветку (`git checkout -b feature/amazing-feature`)
+3. Сделайте коммит изменений (`git commit -m 'Add amazing feature'`)
+4. Пусните в ветку (`git push origin feature/amazing-feature`)
+5. Откройте Pull Request
+
+## 📄 Лицензия
+
+Этот проект использует лицензию MIT. См. файл [LICENSE](LICENSE) для деталей.
+
+## 🔗 Полезные ссылки
+
+- [Next.js Documentation](https://nextjs.org/docs)
+- [Supabase Documentation](https://supabase.com/docs)
+- [Tailwind CSS](https://tailwindcss.com/docs)
+- [Tremor React](https://tremor.so/docs)
+- [Vercel AI SDK](https://sdk.vercel.ai/docs)
 
 ## ✨ Features
 
@@ -54,7 +213,7 @@ Create a `.env.local` file in the `apps/web` directory:
 
 ```env
 # OpenRouter AI
-OPENROUTER_API_KEY=your_openrouter_api_key_here
+OPENROUTER_API_KEY=your_openrouter_api_key
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url

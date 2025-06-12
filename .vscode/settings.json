@@ -1,1 +1,27 @@
-// Настройки VS Code для проекта 
+{
+  "typescript.preferences.includePackageJsonAutoImports": "on",
+  "typescript.preferences.includeWorkspaceSymbolsInAutoImports": true,
+  "typescript.enablePromptUseWorkspaceTsdk": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  },
+  "emmet.includeLanguages": {
+    "javascript": "javascriptreact",
+    "typescript": "typescriptreact"
+  },
+  "tailwindCSS.includeLanguages": {
+    "typescript": "javascript",
+    "typescriptreact": "javascript"
+  },
+  "tailwindCSS.experimental.configFile": "apps/web/tailwind.config.js",
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/dist": true,
+    "**/.next": true
+  }
+} 

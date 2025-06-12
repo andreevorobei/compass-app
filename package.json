@@ -1,8 +1,13 @@
 {
-  "name": "compass-web",
+  "name": "compass-app",
   "version": "1.0.0",
   "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
+<<<<<<< HEAD
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -28,14 +33,20 @@
     "tailwindcss": "^3.3.0",
     "typescript": "^5.0.0",
     "zustand": "^4.4.0"
+=======
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web",
+    "type-check": "npm run type-check --workspace=apps/web"
+>>>>>>> cf02646 (feat(auth): add login and register pages, update project structure)
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
-    "@types/react": "^18.0.0",
-    "@types/react-dom": "^18.0.0",
-    "autoprefixer": "^10.4.0",
+    "@typescript-eslint/eslint-plugin": "^6.0.0",
+    "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.0.0",
-    "eslint-config-next": "^14.0.0",
-    "postcss": "^8.4.0"
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0"
   }
-}
+} 
