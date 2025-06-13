@@ -1,4 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient } from '@/utils/supabase/client'
 
 // Проверяем наличие переменных окружения
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -20,7 +20,7 @@ if (!supabaseUrl || !supabaseAnonKey) {
 }
 
 // Создаем клиент Supabase
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient()
 
 console.log('✅ Supabase клиент создан успешно!')
 
