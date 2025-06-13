@@ -1,6 +1,3 @@
-<<<<<<< HEAD
-// Страница авторизации пользователей 
-=======
 'use client'
 
 import { useState, FormEvent } from 'react'
@@ -188,5 +185,4 @@ export default function LoginPage() {
       </div>
     </div>
   )
-} 
->>>>>>> cf02646 (feat(auth): add login and register pages, update project structure)
+}

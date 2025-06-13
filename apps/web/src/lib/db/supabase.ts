@@ -1,11 +1,5 @@
-// Клиент Supabase для работы с базой данных
-import { createClient } from '@supabase/supabase-js'
-
-// Клиент Supabase для клиентских компонентов
-export const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
+// Временная заглушка для Supabase
+console.warn('Supabase клиент работает в режиме заглушки. Настройте переменные окружения.')
 
 // Тип для пользователя
 export interface User {
@@ -15,59 +9,53 @@ export interface User {
   created_at: string
 }
 
-// Функции для аутентификации
+// Mock функции для аутентификации
 export const auth = {
-  // Регистрация пользователя
+  // Регистрация пользователя (заглушка)
   async signUp(email: string, password: string, fullName?: string) {
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName
-        }
-      }
-    })
-    return { data, error }
+    console.warn('signUp: Supabase не настроен')
+    return { 
+      data: null, 
+      error: { message: 'Supabase не настроен. Проверьте переменные окружения.' } 
+    }
   },
 
-  // Вход пользователя
+  // Вход пользователя (заглушка)
   async signIn(email: string, password: string) {
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
-    return { data, error }
+    console.warn('signIn: Supabase не настроен')
+    return { 
+      data: null, 
+      error: { message: 'Supabase не настроен. Проверьте переменные окружения.' } 
+    }
   },
 
-  // Вход через Google OAuth
+  // Вход через Google OAuth (заглушка)
   async signInWithGoogle() {
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`
-      }
-    })
-    return { data, error }
+    console.warn('signInWithGoogle: Supabase не настроен')
+    return { 
+      data: null, 
+      error: { message: 'Supabase не настроен. Проверьте переменные окружения.' } 
+    }
   },
 
-  // Выход
+  // Выход (заглушка)
   async signOut() {
-    const { error } = await supabase.auth.signOut()
-    return { error }
+    console.warn('signOut: Supabase не настроен')
+    return { error: null }
   },
 
-  // Получить текущего пользователя
+  // Получить текущего пользователя (заглушка)
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser()
-    return { user, error }
+    console.warn('getCurrentUser: Supabase не настроен')
+    return { user: null, error: null }
   },
 
-  // Сброс пароля
+  // Сброс пароля (заглушка)
   async resetPassword(email: string) {
-    const { data, error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`
-    })
-    return { data, error }
+    console.warn('resetPassword: Supabase не настроен')
+    return { 
+      data: null, 
+      error: { message: 'Supabase не настроен. Проверьте переменные окружения.' } 
+    }
   }
 } 

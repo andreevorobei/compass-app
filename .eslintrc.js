@@ -18,19 +18,6 @@ module.exports = {
     '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
     '@typescript-eslint/no-explicit-any': 'warn',
   },
-  overrides: [
-    {
-      files: ['apps/web/**/*'],
-      extends: [
-        'next/core-web-vitals',
-        '@typescript-eslint/recommended',
-      ],
-      rules: {
-        'react/no-unescaped-entities': 'off',
-        '@next/next/no-page-custom-font': 'off',
-      },
-    },
-  ],
   ignorePatterns: [
     'node_modules/',
     'dist/',
