@@ -9,7 +9,11 @@ export const metadata: Metadata = {
   description: 'Персональный ИИ-помощник для карьерного развития, планирования целей и отслеживания прогресса',
   keywords: ['ИИ', 'карьера', 'цели', 'развитие', 'аналитика'],
   authors: [{ name: 'Compass AI Team' }],
-  viewport: 'width=device-width, initial-scale=1',
+}
+
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
 }
 
 export default function RootLayout({

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { auth } from '@/lib/db/supabase'
+import SupabaseCheck from '@/components/debug/SupabaseCheck'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -19,16 +20,38 @@ export default function LoginPage() {
     setIsLoading(true)
     setError('')
 
+    console.log('🎯 КНОПКА ВОЙТИ НАЖАТА!', { email, password: password.length + ' символов' })
+    console.log('🔄 Начинаем вход в систему...', { email })
+    console.log('🔧 Переменные окружения:', {
+      supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'установлена' : 'НЕ УСТАНОВЛЕНА',
+      supabaseKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ? 'установлена' : 'НЕ УСТАНОВЛЕНА'
+    })
+
     try {
       const { data, error } = await auth.signIn(email, password)
       
+      console.log('📊 Результат входа:', { data, error })
+      
       if (error) {
-        setError(error.message)
-      } else if (data.user) {
-        router.push('/dashboard')
+        console.error('❌ Ошибка входа:', error)
+        setError(`Ошибка входа: ${error.message}`)
+      } else if (data?.user) {
+        console.log('✅ Успешный вход:', data.user)
+        console.log('🗝️ Сессия:', data.session)
+        
+        // Даем время для обновления cookies на сервере
+        console.log('⏳ Ждем обновления сессии...')
+        await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        console.log('🔄 Перенаправляем на /chat')
+        window.location.href = '/chat' // Принудительное перенаправление
+      } else {
+        console.warn('⚠️ Неожиданный ответ от Supabase:', { data, error })
+        setError('Неожиданная ошибка при входе')
       }
-    } catch (err) {
-      setError('Произошла ошибка при входе')
+    } catch (err: any) {
+      console.error('💥 Исключение при входе:', err)
+      setError(`Произошла ошибка: ${err.message || 'Неизвестная ошибка'}`)
     } finally {
       setIsLoading(false)
     }
@@ -180,9 +203,13 @@ export default function LoginPage() {
                 Зарегистрироваться
               </Link>
             </p>
+
           </div>
         </div>
       </div>
+      
+      {/* Диагностический компонент */}
+      <SupabaseCheck />
     </div>
   )
 }
