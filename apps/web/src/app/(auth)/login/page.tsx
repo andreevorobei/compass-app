@@ -4,7 +4,7 @@ import { useState, FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
-import { auth } from '@/lib/db/supabase'
+import { auth, supabase } from '@/lib/db/supabase'
 import SupabaseCheck from '@/components/debug/SupabaseCheck'
 
 export default function LoginPage() {
@@ -39,12 +39,19 @@ export default function LoginPage() {
         console.log('✅ Успешный вход:', data.user)
         console.log('🗝️ Сессия:', data.session)
         
-        // Даем время для обновления cookies на сервере
-        console.log('⏳ Ждем обновления сессии...')
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // Принудительно обновляем сессию в клиенте
+        console.log('🔄 Обновляем сессию клиента...')
+        await supabase.auth.setSession({
+          access_token: data.session?.access_token || '',
+          refresh_token: data.session?.refresh_token || ''
+        })
         
-        console.log('🔄 Перенаправляем на /chat')
-        window.location.href = '/chat' // Принудительное перенаправление
+        // Даем время для обновления cookies
+        console.log('⏳ Ждем обновления cookies...')
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
+        console.log('🚀 Перенаправляем на /chat')
+        window.location.href = '/chat'
       } else {
         console.warn('⚠️ Неожиданный ответ от Supabase:', { data, error })
         setError('Неожиданная ошибка при входе')

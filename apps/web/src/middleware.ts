@@ -59,6 +59,22 @@ export async function middleware(req: NextRequest) {
   const {
     data: { session },
   } = await supabase.auth.getSession()
+  
+  // Дополнительная проверка для пользователя
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+  
+  // Если это redirect после логина, даем больше времени для обновления сессии
+  const isRedirectFromLogin = req.nextUrl.searchParams.has('redirectTo')
+  if (isRedirectFromLogin && !session && !user) {
+    console.log('⏳ Redirect после логина, ждем обновления сессии...')
+    // Пробуем еще раз через небольшую задержку
+    await new Promise(resolve => setTimeout(resolve, 100))
+    const { data: { session: sessionRetry } } = await supabase.auth.getSession()
+    const { data: { user: userRetry } } = await supabase.auth.getUser()
+    console.log('🔄 Повторная проверка:', { session: !!sessionRetry, user: !!userRetry })
+  }
 
   // Защищенные маршруты (требуют аутентификации)
   const protectedPaths = ['/dashboard', '/profile', '/chat', '/goals', '/analytics']
@@ -74,16 +90,18 @@ export async function middleware(req: NextRequest) {
     req.nextUrl.pathname.startsWith(path)
   )
 
+  // ВРЕМЕННО ОТКЛЮЧЕНО для отладки redirect после логина
   // Если пользователь не аутентифицирован и пытается зайти на защищенную страницу
-  if (isProtectedPath && !session) {
+  if (isProtectedPath && !session && !user) {
+    console.log('🚫 MIDDLEWARE БЛОКИРУЕТ:', req.nextUrl.pathname, 'session:', !!session, 'user:', !!user)
     const redirectUrl = new URL('/login', req.url)
     redirectUrl.searchParams.set('redirectTo', req.nextUrl.pathname)
-    return NextResponse.redirect(redirectUrl)
+    // ВРЕМЕННО ОТКЛЮЧЕНО: return NextResponse.redirect(redirectUrl)
   }
 
   // Если пользователь аутентифицирован и пытается зайти на страницы входа/регистрации
-  if (isAuthPath && session) {
-    return NextResponse.redirect(new URL('/dashboard', req.url))
+  if (isAuthPath && (session || user)) {
+    return NextResponse.redirect(new URL('/chat', req.url))
   }
 
   return response
