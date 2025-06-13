@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/db/supabase'
 
 export default function SupabaseCheck() {
+  const [mounted, setMounted] = useState(false)
   const [status, setStatus] = useState<{
     isConnected: boolean
     error?: string
@@ -11,6 +12,7 @@ export default function SupabaseCheck() {
   }>({ isConnected: false })
 
   useEffect(() => {
+    setMounted(true)
     checkSupabaseConnection()
   }, [])
 
@@ -66,8 +68,11 @@ export default function SupabaseCheck() {
     }
   }
 
+  // Не рендерим до mount для предотвращения hydration mismatch
+  if (!mounted) return null
+
   return (
-    <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm">
+    <div className="fixed bottom-4 right-4 bg-white border border-gray-300 rounded-lg shadow-lg p-4 max-w-sm z-50">
       <h3 className="font-semibold text-gray-900 mb-2">🔧 Статус Supabase</h3>
       
       <div className="space-y-2 text-sm">
