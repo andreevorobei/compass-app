@@ -1,0 +1,28 @@
+ИСПРАВЛЕНИЕ ПРОПОВ PROGRESSBAR КОМПОНЕНТА
+========================================
+
+Дата: 14.06.2025 20:05 МСК
+
+ПРОБЛЕМА:
+Type error: Property 'bgcolor' does not exist on type 'ProgressBarProps'. 
+Did you mean 'bgColor'?
+
+ФАЙЛ: apps/web/src/components/profile/SkillsProgress.tsx
+
+ИСПРАВЛЕНИЯ:
+- Строка 106: bgcolor → bgColor
+- Строка 128: bgcolor → bgColor
+
+ИЗМЕНЕНИЯ:
+1. Первый ProgressBar (Current Level):
+   - Заменен props bgcolor на bgColor
+   - Функция getProgressColor() теперь работает корректно
+
+2. Второй ProgressBar (Target Level):  
+   - Заменен props bgcolor на bgColor
+   - Цвет "#e5e7eb" применяется правильно
+
+РЕЗУЛЬТАТ:
+- Устранена TypeScript ошибка компиляции
+- ProgressBar компоненты работают корректно
+- Приложение готово к деплою на Vercel 

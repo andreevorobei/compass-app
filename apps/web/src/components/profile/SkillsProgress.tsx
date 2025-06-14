@@ -103,7 +103,7 @@ function SkillProgressItem({ skill, showTarget, animated }: SkillProgressItemPro
         
         <ProgressBar
           completed={currentProgress}
-          bgcolor={getProgressColor(currentProgress)}
+          bgColor={getProgressColor(currentProgress)}
           height="8px"
           isLabelVisible={false}
           animateOnRender={animated}
@@ -125,7 +125,7 @@ function SkillProgressItem({ skill, showTarget, animated }: SkillProgressItemPro
           
           <ProgressBar
             completed={targetProgress}
-            bgcolor="#e5e7eb"
+            bgColor="#e5e7eb"
             height="4px"
             isLabelVisible={false}
             animateOnRender={false}
