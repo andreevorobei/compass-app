@@ -1,0 +1,28 @@
+Fix API compatibility issues for Vercel deployment
+
+ПРОБЛЕМЫ:
+1. Метод generateObject() не существует на OpenRouterProvider
+2. Устаревшие импорты Supabase createClientComponentClient/createServerComponentClient
+3. Ошибки типизации в Upstash cache с spread оператором
+
+ИСПРАВЛЕНИЯ:
+1. OpenRouter API:
+   - Добавлен импорт generateObject из 'ai'
+   - Заменён openrouter.generateObject() на generateObject({ model: openrouter(modelId) })
+   - Использован режим 'no-schema' для совместимости
+   - Исправлен доступ к result.object
+
+2. Supabase API:
+   - Заменены createClientComponentClient/createServerComponentClient
+   - На createBrowserClient/createServerClient из '@supabase/ssr'
+   - Обновлена конфигурация cookies для server client
+
+3. TypeScript типизация:
+   - Исправлен spread оператор с проверкой на null: ...(existing || {})
+   - Добавлены правильные типы Record<string, any> и any[] 
+   - Убраны ошибки с индексацией пустых объектов
+
+РЕЗУЛЬТАТ:
+✅ Сборка проходит успешно
+✅ TypeScript ошибки исправлены
+✅ Готово к деплою на Vercel 

@@ -5,13 +5,13 @@ import { CacheManager, CACHE_PREFIXES, CACHE_TTL } from './client'
 
 // User profile caching with smart updates
 export class ProfileCache {
-  static async getProfile(userId: string) {
+  static async getProfile(userId: string): Promise<Record<string, any> | null> {
     return CacheManager.getUserProfile(userId)
   }
 
-  static async updateProfile(userId: string, updates: Partial<any>) {
+  static async updateProfile(userId: string, updates: Partial<Record<string, any>>) {
     const existing = await this.getProfile(userId)
-    const updated = { ...existing, ...updates, updatedAt: new Date().toISOString() }
+    const updated = { ...(existing || {}), ...updates, updatedAt: new Date().toISOString() }
     return CacheManager.cacheUserProfile(userId, updated)
   }
 
@@ -23,7 +23,7 @@ export class ProfileCache {
 
 // Skills data caching with progress tracking
 export class SkillsCache {
-  static async getSkills(userId: string) {
+  static async getSkills(userId: string): Promise<Record<string, any> | null> {
     const key = `${CACHE_PREFIXES.SKILLS_DATA}${userId}`
     return CacheManager.get(key)
   }
@@ -34,7 +34,7 @@ export class SkillsCache {
     progress: number
   ) {
     const key = `${CACHE_PREFIXES.SKILLS_DATA}${userId}`
-    const skills = await this.getSkills(userId) || {}
+    const skills: Record<string, any> = await this.getSkills(userId) || {}
     
     skills[skillName] = {
       progress,
@@ -47,7 +47,7 @@ export class SkillsCache {
 
   static async addSkill(userId: string, skill: any) {
     const key = `${CACHE_PREFIXES.SKILLS_DATA}${userId}`
-    const skills = await this.getSkills(userId) || {}
+    const skills: Record<string, any> = await this.getSkills(userId) || {}
     
     skills[skill.name] = {
       ...skill,
@@ -60,14 +60,14 @@ export class SkillsCache {
 
 // Goals caching with status tracking
 export class GoalsCache {
-  static async getGoals(userId: string) {
+  static async getGoals(userId: string): Promise<any[] | null> {
     const key = `${CACHE_PREFIXES.GOALS_DATA}${userId}`
     return CacheManager.get(key)
   }
 
   static async addGoal(userId: string, goal: any) {
     const key = `${CACHE_PREFIXES.GOALS_DATA}${userId}`
-    const goals = await this.getGoals(userId) || []
+    const goals: any[] = await this.getGoals(userId) || []
     
     const newGoal = {
       id: Date.now().toString(),
@@ -86,7 +86,7 @@ export class GoalsCache {
     status: string
   ) {
     const key = `${CACHE_PREFIXES.GOALS_DATA}${userId}`
-    const goals = await this.getGoals(userId) || []
+    const goals: any[] = await this.getGoals(userId) || []
     
     const goalIndex = goals.findIndex((g: any) => g.id === goalId)
     if (goalIndex !== -1) {
@@ -100,7 +100,7 @@ export class GoalsCache {
 
 // Analytics caching for performance metrics
 export class AnalyticsCache {
-  static async getAnalytics(userId: string, timeframe: string = '30d') {
+  static async getAnalytics(userId: string, timeframe: string = '30d'): Promise<Record<string, any> | null> {
     const key = `${CACHE_PREFIXES.ANALYTICS}${userId}:${timeframe}`
     return CacheManager.get(key)
   }
@@ -119,7 +119,7 @@ export class AnalyticsCache {
     metricName: string, 
     value: number = 1
   ) {
-    const analytics = await this.getAnalytics(userId) || {}
+    const analytics: Record<string, any> = await this.getAnalytics(userId) || {}
     analytics[metricName] = (analytics[metricName] || 0) + value
     analytics.lastUpdated = new Date().toISOString()
     

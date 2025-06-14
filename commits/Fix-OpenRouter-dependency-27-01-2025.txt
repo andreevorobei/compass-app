@@ -1,0 +1,18 @@
+Fix: Add missing @openrouter/ai-sdk-provider dependency and update API usage
+
+## Changes
+- Added @openrouter/ai-sdk-provider v0.7.2 to package.json dependencies
+- Updated OpenRouter client imports from OpenRouter to createOpenRouter
+- Removed deprecated baseURL parameter (now built into the new API)
+
+## Issue Fixed
+Vercel deployment was failing with error:
+"Cannot find module '@openrouter/ai-sdk-provider' or its corresponding type declarations"
+
+## Files Modified
+- apps/web/package.json: Added dependency
+- apps/web/src/integrations/openrouter/client.ts: Updated API usage
+
+## Testing
+✅ Dependencies installed successfully
+✅ No more import errors locally 

@@ -3,6 +3,7 @@
 
 import { openrouter, selectModel } from './client'
 import { getModelById, ModelConfig } from './models'
+import { generateObject } from 'ai'
 
 export interface RouterOptions {
   maxCost?: number // Maximum cost per query in USD
@@ -32,11 +33,11 @@ export class AIRouter {
       throw new Error(`Model ${modelId} not found`)
     }
     
-    // Generate response
-    const response = await openrouter.generateObject({
-      model: modelId,
+    // Generate response using correct AI SDK API
+    const result = await generateObject({
+      model: openrouter(modelId),
       prompt,
-      schema: this.getSchemaForContext(options.context)
+      output: 'no-schema'
     })
     
     // Track costs
@@ -45,7 +46,7 @@ export class AIRouter {
     
     return {
       model: modelId,
-      response,
+      response: result.object,
       cost: estimatedCost
     }
   }
