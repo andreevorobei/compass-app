@@ -1,4 +1,4 @@
-Коммит: Настройка Next.js 14 и TypeScript - 2024-12-02
+Коммит: Настройка Next.js 14 и TypeScript
 
 Изменения в этом коммите:
 - Установка Next.js 14 с App Router
