@@ -1,0 +1,41 @@
+ИСПРАВЛЕНИЕ API РОУТОВ ДЛЯ VERCEL ДЕПЛОЯ
+===========================================
+
+Дата: 14.06.2025 19:55 МСК
+
+ПРОБЛЕМА:
+Type error: File '/vercel/path0/apps/web/src/app/api/auth/route.ts' is not a module.
+
+ПРИЧИНА:
+Несколько API файлов содержали только комментарии без экспортов функций, 
+что приводило к ошибке "File is not a module" при компиляции TypeScript.
+
+ИСПРАВЛЕННЫЕ ФАЙЛЫ:
+
+1. apps/web/src/app/api/auth/route.ts
+   - Добавлен импорт NextRequest, NextResponse
+   - Добавлены экспорты функций GET и POST
+   - Создана базовая обработка запросов с заглушкой "в разработке"
+
+2. apps/web/src/app/api/chat/route.ts  
+   - Добавлен импорт NextRequest, NextResponse
+   - Добавлен экспорт функции POST
+   - Создана обработка JSON запросов с error handling
+
+3. apps/web/src/app/api/webhooks/route.ts
+   - Добавлен импорт NextRequest, NextResponse  
+   - Добавлен экспорт функции POST
+   - Создана обработка webhook запросов
+
+4. apps/web/src/app/api/profile/route.ts
+   - Добавлен импорт NextRequest, NextResponse
+   - Добавлены экспорты функций GET, POST, PUT
+   - Создана полная CRUD обработка для профилей
+
+РЕЗУЛЬТАТ:
+- Устранена ошибка "File is not a module" 
+- Все API роуты теперь являются валидными модулями
+- Добавлена базовая структура для будущей разработки API
+- Приложение готово к деплою на Vercel
+
+СТАТУС: Готово к повторному деплою 
