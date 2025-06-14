@@ -2,11 +2,10 @@
 // Supports DeepSeek V3, Gemini 2.0 Flash, DeepSeek R1, GPT-4o Mini
 // Cost optimization: $0.05-0.17/user/month vs $25.88 industry standard
 
-import { OpenRouter } from '@openrouter/ai-sdk-provider'
+import { createOpenRouter } from '@openrouter/ai-sdk-provider'
 
-export const openrouter = new OpenRouter({
+export const openrouter = createOpenRouter({
   apiKey: process.env.OPENROUTER_API_KEY,
-  baseURL: 'https://openrouter.ai/api/v1',
 })
 
 // Available models with cost optimization
