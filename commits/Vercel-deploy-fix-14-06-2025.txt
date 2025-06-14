@@ -1,0 +1,42 @@
+ИСПРАВЛЕНИЯ ДЛЯ ДЕПЛОЯ НА VERCEL
+======================================
+
+Дата: 14.06.2025 18:41 МСК
+
+ПРОБЛЕМЫ РЕШЕНЫ:
+
+1. TypeScript Error - "File is not a module"
+   - Исправлен файл analytics/page.tsx (только комментарий → полноценный React компонент)
+   - Исправлен файл goals/page.tsx (только комментарий → полноценный React компонент) 
+   - Исправлен файл profile/page.tsx (только комментарий → полноценный React компонент)
+
+2. ESLint Error - "Failed to load parser"
+   - Обновлена конфигурация .eslintrc.js в apps/web/
+   - Добавлен явный парсер @typescript-eslint/parser
+   - Исправлена структура extends для корректной работы в монорепо
+
+ВНЕСЁННЫЕ ИЗМЕНЕНИЯ:
+
+apps/web/src/app/(dashboard)/analytics/page.tsx:
+- Добавлен экспорт функции AnalyticsPage
+- Создан полноценный JSX компонент со страницей-заглушкой
+- Добавлен стиль заглушки "в разработке"
+
+apps/web/src/app/(dashboard)/goals/page.tsx:
+- Добавлен экспорт функции GoalsPage
+- Создан полноценный JSX компонент со страницей-заглушкой
+
+apps/web/src/app/(dashboard)/profile/page.tsx:
+- Добавлен экспорт функции ProfilePage  
+- Создан полноценный JSX компонент со страницей-заглушкой
+
+apps/web/.eslintrc.js:
+- Добавлен явный parser: '@typescript-eslint/parser'
+- Добавлены parserOptions с настройками для JSX
+- Обновлена структура extends для массива
+
+РЕЗУЛЬТАТ:
+- Устранены ошибки TypeScript компиляции
+- Исправлены проблемы с ESLint парсером  
+- Приложение готово к деплою на Vercel
+- Локальный сервер запущен и работает на localhost:3000 
