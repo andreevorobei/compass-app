@@ -1,0 +1,26 @@
+УДАЛЕНИЕ НЕИСПОЛЬЗУЕМОГО ФАЙЛА PROVIDER.TSX
+===========================================
+
+Дата: 14.06.2025 20:10 МСК
+
+ПРОБЛЕМА:
+Type error: Cannot find module '@assistant-ui/react' 
+or its corresponding type declarations.
+
+ФАЙЛ: apps/web/src/integrations/assistant-ui/provider.tsx
+
+АНАЛИЗ:
+- Файл provider.tsx импортирует @assistant-ui/react
+- Данный пакет не установлен в package.json
+- Файл нигде не используется в приложении
+- AssistantProvider не импортируется ни в одном компоненте
+
+РЕШЕНИЕ:
+- Удален файл provider.tsx
+- Сохранен файл config.ts (не содержит проблемных зависимостей)
+- Избежали добавления лишних зависимостей
+
+РЕЗУЛЬТАТ:
+- Устранена ошибка компиляции TypeScript
+- Уменьшен размер проекта
+- Приложение готово к деплою на Vercel 
