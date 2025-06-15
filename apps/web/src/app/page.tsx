@@ -33,6 +33,13 @@ export default function HomePage() {
             >
               Войти в аккаунт
             </Link>
+
+            <Link
+              href="/test"
+              className="inline-flex items-center px-8 py-3 border-2 border-green-600 text-green-600 font-semibold rounded-lg hover:bg-green-50 transition-colors"
+            >
+              🧪 Test Stores
+            </Link>
           </div>
         </div>
 
