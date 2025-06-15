@@ -1,4 +1,4 @@
-import { createClient } from '@/utils/supabase/client'
+import { createClient } from '@/integrations/supabase/client'
 
 // Проверяем наличие переменных окружения
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL

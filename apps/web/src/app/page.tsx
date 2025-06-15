@@ -40,6 +40,13 @@ export default function HomePage() {
             >
               🧪 Test Stores
             </Link>
+
+            <Link
+              href="/dashboard"
+              className="inline-flex items-center px-8 py-3 border-2 border-purple-600 text-purple-600 font-semibold rounded-lg hover:bg-purple-50 transition-colors"
+            >
+              📊 Dashboard
+            </Link>
           </div>
         </div>
 

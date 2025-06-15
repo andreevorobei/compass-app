@@ -1,11 +1,12 @@
 // Utility functions for Compass career coaching application
 // Common helpers for data processing, formatting, and validation
 
-import { clsx, type ClassValue } from 'clsx'
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
 
 // Tailwind CSS class name utility
 export function cn(...inputs: ClassValue[]) {
-  return clsx(inputs)
+  return twMerge(clsx(inputs))
 }
 
 // Format date for display
